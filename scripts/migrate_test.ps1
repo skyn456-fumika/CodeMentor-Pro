@@ -1,15 +1,24 @@
 $ErrorActionPreference = "Stop"
 
-# 기존 환경변수 보관
+# 기존 DATABASE_URL 백업
 $previousDatabaseUrl = [Environment]::GetEnvironmentVariable(
     "DATABASE_URL", "Process"
 )
 
-try {
-    # 테스트 DB 설정
-    $env:DATABASE_URL = "postgresql+psycopg://codementor:devpassword@127.0.0.1:5433/codementor_test"
+# 테스트 DB 환경변수 확인
+$testDatabaseUrl = [Environment]::GetEnvironmentVariable(
+    "TEST_DATABASE_URL", "Process"
+)
 
-    Write-Host "Applying migrations to codementor_test..."
+if ([string]::IsNullOrWhiteSpace($testDatabaseUrl)) {
+    throw "TEST_DATABASE_URL environment variable is required."
+}
+
+try {
+    # Alembic이 테스트 DB를 사용하도록 설정
+    $env:DATABASE_URL = $testDatabaseUrl
+
+    Write-Host "Applying migrations to test database..."
 
     python -m alembic upgrade head
 
@@ -20,13 +29,10 @@ try {
     Write-Host "Test database migration completed."
 }
 finally {
-    # 기존 환경변수 복구
+    # 기존 DATABASE_URL 복원
     [Environment]::SetEnvironmentVariable(
         "DATABASE_URL",
         $previousDatabaseUrl,
         "Process"
-    )  
+    )
 }
-
-# 단, 기존에 사용한 방법처럼 alembic/env.py가 DATABASE_URL을 읽는 구조여야 하고, 
-# 실제 마이그레이션 대상이 테스트 DB인지 먼저 확인해야 함

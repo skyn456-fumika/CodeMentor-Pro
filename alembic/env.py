@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -9,9 +8,10 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-# run_migrations_offline() 및 run_migrations_online()에서 
-# 사용하는 DB 주소가 .env의 DATABASE_URL을 참조하도록 설정
+# Alembic이 개발 DB 또는 테스트 DB의
+# DATABASE_URL 환경변수를 사용하도록 설정
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +30,6 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 from backend.app.db.base import Base
-import backend.app.models
 
 target_metadata = Base.metadata
 
