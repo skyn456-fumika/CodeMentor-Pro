@@ -1,0 +1,61 @@
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: codementor
+      POSTGRES_USER: codementor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - codementor_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codementor -d codementor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    image: codementor-pro:dev
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://codementor:${POSTGRES_PASSWORD}@db:5432/codementor
+      STREAMLIT_APP_URL: http://localhost:8501
+      BROWSER_ALLOWED_ORIGINS: "http://localhost:8000,http://localhost:8501"
+      COOKIE_SECURE: "false"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        python -m alembic upgrade head &&
+        python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    image: codementor-pro:dev
+    env_file:
+      - .env
+    environment:
+      API_BASE_URL: http://backend:8000
+      STREAMLIT_APP_URL: http://localhost:8501
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      - backend
+    command:
+      - python
+      - -m
+      - streamlit
+      - run
+      - frontend/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+
+volumes:
+  codementor_pgdata:
