@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
 
 from backend.app.api.v1 import auth
@@ -7,13 +9,24 @@ from backend.app.services.auth_service import InvalidCredentialsError
 client = TestClient(app)
 
 
+
 def test_login_success(monkeypatch):
+    # Access Token 발급 Mock
     monkeypatch.setattr(
         auth,
         "login_user",
         lambda session, email, password: "fake.jwt.token",
     )
 
+    # 인증된 사용자 조회 Mock
+    monkeypatch.setattr(
+        auth,
+        "find_user_by_email",
+        # 실제 SQLAlchemy 엔티티를 만들지 않고도 user.id를 제공하는 간단한 가짜 객체
+        lambda session, email: SimpleNamespace(id=1),
+    )
+
+    # Refresh Token 발급 Mock
     monkeypatch.setattr(
         auth,
         "issue_refresh_token",
@@ -34,11 +47,8 @@ def test_login_success(monkeypatch):
 
     assert data["access_token"] == "fake.jwt.token"
     assert data["token_type"] == "bearer"
-
-    # Refresh Token 추가 검증
     assert data["refresh_token"] == "fake-refresh-token-for-testing"
 
-    # 응답 필드도 확인
     assert set(data.keys()) == {
         "access_token",
         "refresh_token",
