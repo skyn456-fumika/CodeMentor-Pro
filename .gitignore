@@ -1,0 +1,39 @@
+scripts/totalprocess.txt
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+.gemini/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE / OS
+.idea/
+.vscode/
+.vs/
+.DS_Store
+Thumbs.db
+
+# Local databases / logs
+*.db
+*.sqlite3
+*.log
+
+# Generated files
+dist/
+build/
+*.egg-info/
