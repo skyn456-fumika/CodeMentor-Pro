@@ -103,6 +103,20 @@ python -m ruff check backend
 python -m ruff check frontend
 ```
 
+## CI/CD 자동화
+
+GitHub Actions를 이용해 코드 변경 시 정적 검사와 자동화 테스트를 수행합니다.
+
+- **실행 조건:** `main` 브랜치 Push 및 Pull Request
+- **정적 검사:** Ruff (Backend, Frontend, Alembic)
+- **테스트 환경:** Python 3.11, PostgreSQL 17
+- **데이터베이스:** Alembic 마이그레이션 자동 적용
+- **자동 테스트:** pytest 백엔드 127개, 프론트엔드 5개
+
+CI는 로컬 개발 데이터베이스와 분리된 PostgreSQL 테스트 환경에서 실행되며, 테스트 결과를 GitHub Actions에서 확인할 수 있습니다.
+
+[![CodeMentor Pro CI](https://github.com/skyn456-fumika/CodeMentor-Pro/actions/workflows/ci.yml/badge.svg)](https://github.com/skyn456-fumika/CodeMentor-Pro/actions/workflows/ci.yml)
+
 ## 개발 환경
 
 - Python 3.11
@@ -216,11 +230,81 @@ python -m ruff check frontend
 
 현재 실행 방법은 Windows 11 및 PowerShell 개발 환경을 기준으로 작성되었습니다. 브라우저 인증 쿠키는 로컬 개발 시 `localhost`를 사용하며, 실제 배포 시에는 HTTPS 및 운영 환경에 맞는 보안 설정이 필요합니다.
 
+## Docker Compose 실행
+
+CodeMentor-Pro는 Docker Compose를 이용해 PostgreSQL, FastAPI, Streamlit을 함께 실행할 수 있습니다.
+
+### 1. 환경변수 준비
+
+프로젝트 루트에서 `.env.example`을 복사해 `.env` 파일을 생성합니다.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`.env`에 PostgreSQL 비밀번호, Gemini API 키, JWT 비밀키 등 필요한 환경변수를 설정합니다.
+
+Docker Compose용 `POSTGRES_PASSWORD`도 지정해야 합니다.
+
+```dotenv
+POSTGRES_PASSWORD=YOUR_LOCAL_DATABASE_PASSWORD
+```
+
+실제 비밀번호와 API 키가 포함된 `.env` 파일은 Git에 커밋하지 않습니다.
+
+### 2. 컨테이너 실행
+
+```powershell
+docker compose up -d --build
+```
+
+Compose는 다음 세 서비스를 실행합니다.
+
+- `db`: PostgreSQL 17
+- `backend`: FastAPI 및 Alembic 마이그레이션
+- `frontend`: Streamlit 웹 애플리케이션
+
+PostgreSQL 데이터는 Docker 볼륨에 보관됩니다.
+
+### 3. 서비스 접속
+
+| 서비스 | URL |
+|---|---|
+| Streamlit | http://localhost:8501 |
+| FastAPI Swagger | http://localhost:8000/docs |
+
+### 4. 상태 및 로그 확인
+
+```powershell
+docker compose ps
+docker compose logs --tail 50 backend
+docker compose logs --tail 50 frontend
+```
+
+### 5. 컨테이너 종료
+
+```powershell
+docker compose down
+```
+
+위 명령은 컨테이너와 Compose 네트워크를 종료 및 제거하며, PostgreSQL 데이터 볼륨은 유지합니다.
+
+**주의:** `docker compose down -v`는 Compose 데이터 볼륨도 삭제하므로 데이터 초기화가 필요한 경우에만 사용해야 합니다.
+
+### Docker 네트워크 구성
+
+Docker 컨테이너 사이의 내부 통신에는 서비스 이름을 사용합니다.
+
+- Streamlit → FastAPI: `http://backend:8000`
+- FastAPI → PostgreSQL: `db:5432`
+
+브라우저에서 접근하는 주소는 `localhost`를 사용합니다.
+
+현재 구성은 로컬 개발 및 테스트 환경을 기준으로 하며, 운영 배포 시에는 HTTPS, 비밀정보 관리, 인증 및 CSRF 보안 설정 등을 별도로 검토해야 합니다.
+
 
 ## 향후 개선 사항
 
-- Docker 기반 실행 환경 정리
-- GitHub Actions CI 구성
 - 인증 및 CSRF 보안 추가 강화
 - 배포 환경 구성 및 운영 검증
 
