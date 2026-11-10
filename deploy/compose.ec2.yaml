@@ -26,6 +26,7 @@ services:
       DATABASE_URL: postgresql+psycopg://codementor:${POSTGRES_PASSWORD}@db:5432/codementor
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
       GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       STREAMLIT_APP_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
       BROWSER_ALLOWED_ORIGINS: ${PUBLIC_URL}
       COOKIE_SECURE: "true"
