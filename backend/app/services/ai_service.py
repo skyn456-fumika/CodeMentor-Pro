@@ -23,7 +23,11 @@ def create_gemini_client():
         http_options=types.HttpOptions(
             timeout=30_000,
             retry_options=types.HttpRetryOptions(
-                attempts=1,
+                attempts=3,
+                initial_delay=1.0,
+                max_delay=4.0,
+                exp_base=2.0,
+                http_status_codes=[503],
             ),
         ),
     )
