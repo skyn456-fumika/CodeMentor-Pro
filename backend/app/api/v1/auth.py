@@ -182,9 +182,8 @@ def browser_login(
         ) from exc
 
 # 브라우저용 Refresh API
-# 개발 단계의 기능 구현용
-# 쿠키 인증 엔드포인트에는 CSRF 방어가 필요하고, SameSite=Lax만으로 모든 CSRF 위험을 막을 수는 없음
-# 다음 보안 단계에서 허용된 Origin 검사와 적절한 CSRF 방어를 추가해야 함
+# 요청 출처를 검증하여 허용된 브라우저 요청만 처리
+# 운영 환경에서는 HTTPS와 추가적인 CSRF 방어를 함께 적용
 @router.post(
     "/browser-refresh",
     dependencies=[Depends(validate_browser_origin)],
@@ -481,7 +480,11 @@ def browser_signout(
         Cookie(alias=CSRF_COOKIE_NAME),
     ] = None,
 ):
-    validate_csrf_token(csrf_cookie, csrf_token)
+    validate_csrf_token(
+        csrf_cookie,
+        csrf_token,
+        binding=refresh_token,
+    )
 
     # 아래는 기존 토큰 폐기 및
     # 쿠키 삭제, 리다이렉트 코드 그대로 유지

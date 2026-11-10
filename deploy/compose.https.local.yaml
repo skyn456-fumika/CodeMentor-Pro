@@ -1,0 +1,20 @@
+
+services:
+  backend:
+    environment:
+      STREAMLIT_APP_URL: https://localhost:18443
+      BROWSER_ALLOWED_ORIGINS: https://localhost:18443
+      COOKIE_SECURE: "true"
+
+  frontend:
+    environment:
+      API_BASE_URL: http://backend:8000
+      PUBLIC_API_BASE_URL: https://localhost:18443
+      STREAMLIT_APP_URL: https://localhost:18443
+
+  nginx:
+    ports:
+      - "127.0.0.1:18443:443"
+    volumes:
+      - ./nginx/https.local.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro

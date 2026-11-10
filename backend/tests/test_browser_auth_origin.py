@@ -9,6 +9,7 @@ client = TestClient(app)
 BROWSER_ENDPOINTS = (
     "/api/v1/auth/browser-login",
     "/api/v1/auth/browser-refresh",
+    "/api/v1/auth/browser-restore",
     "/api/v1/auth/browser-logout",
     "/api/v1/auth/browser-signin",
     "/api/v1/auth/browser-signout",

@@ -1,11 +1,17 @@
-from fastapi import APIRouter, Response
+import os
+from html import escape
+
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import HTMLResponse
 
 from backend.app.core.browser_csrf import (
     CSRF_COOKIE_NAME,
     create_csrf_token,
 )
-from backend.app.core.cookie_settings import COOKIE_SECURE
+from backend.app.core.cookie_settings import (
+    COOKIE_SECURE,
+    REFRESH_COOKIE_NAME,
+)
 
 router = APIRouter()
 
@@ -145,9 +151,17 @@ def browser_signin_page(response: Response):
     return html.replace("__CSRF_TOKEN__", csrf_token)
 
 # 로그아웃 확인 화면
+# 브라우저의 Refresh Token을 기준으로 CSRF 토큰이 생성
 @router.get("/browser-signout", response_class=HTMLResponse)
-def browser_signout_page(response: Response):
-    csrf_token = create_csrf_token()
+def browser_signout_page(
+    request: Request,
+    response: Response,
+):
+    refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
+
+    csrf_token = create_csrf_token(
+        binding=refresh_token,
+    )
 
     response.set_cookie(
         key=CSRF_COOKIE_NAME,
@@ -158,6 +172,11 @@ def browser_signout_page(response: Response):
         path="/",
         max_age=600,
     )
+
+    streamlit_url = os.getenv(
+        "STREAMLIT_APP_URL",
+        "http://localhost:8501",
+    ).rstrip("/")
 
     html = """
     <!DOCTYPE html>
@@ -236,7 +255,7 @@ def browser_signout_page(response: Response):
                 </button>
             </form>
 
-            <a href="http://localhost:8501">
+            <a href="__STREAMLIT_URL__">
                 취소하고 돌아가기
             </a>
         </main>
@@ -244,4 +263,8 @@ def browser_signout_page(response: Response):
     </html>
     """
 
-    return html.replace("__CSRF_TOKEN__", csrf_token)
+    # escape()는 환경변수에 포함된 &, 따옴표 등의 문자가 HTML 속성을 깨뜨리지 않도록 처리
+    return (
+        html.replace("__CSRF_TOKEN__", csrf_token)
+        .replace("__STREAMLIT_URL__", escape(streamlit_url, quote=True))
+    )

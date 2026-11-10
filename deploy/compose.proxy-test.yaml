@@ -1,0 +1,71 @@
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: codementor
+      POSTGRES_USER: codementor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codementor -d codementor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://codementor:${POSTGRES_PASSWORD}@db:5432/codementor
+      STREAMLIT_APP_URL: ${PROXY_PUBLIC_URL:-http://localhost:8080}
+      BROWSER_ALLOWED_ORIGINS: ${PROXY_PUBLIC_URL:-http://localhost:8080}
+      COOKIE_SECURE: ${PROXY_COOKIE_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        python -m alembic upgrade head &&
+        python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      API_BASE_URL: http://backend:8000
+      PUBLIC_API_BASE_URL: ${PROXY_PUBLIC_URL:-http://localhost:8080}
+      STREAMLIT_APP_URL: ${PROXY_PUBLIC_URL:-http://localhost:8080}
+    depends_on:
+      - backend
+    command:
+      - python
+      - -m
+      - streamlit
+      - run
+      - frontend/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "127.0.0.1:18080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:

@@ -37,3 +37,13 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# TLS private certificates
+deploy/nginx/certs/
+
+# Production secrets
+deploy/.env.production
+
+# Let's Encrypt runtime files
+deploy/certbot/www/
+deploy/certbot/conf/

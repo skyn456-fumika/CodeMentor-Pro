@@ -1,4 +1,6 @@
 # Streamlit 메인 화면
+import os
+
 import requests
 import streamlit as st
 
@@ -22,6 +24,14 @@ from frontend.auth_session import (
     renew_authentication,
     restore_login_from_cookie,
 )
+
+PUBLIC_API_BASE_URL = os.getenv(
+    "PUBLIC_API_BASE_URL",
+    "http://localhost:8000",
+).rstrip("/")
+
+def browser_auth_url(endpoint: str) -> str:
+    return f"{PUBLIC_API_BASE_URL}/api/v1/auth/{endpoint}"
 
 # 로그인 정보 초기화
 if "access_token" not in st.session_state:
@@ -108,7 +118,7 @@ if not st.session_state.access_token:
 
         st.link_button(
             "🔐 로그인하기",
-            "http://localhost:8000/api/v1/auth/browser-signin",
+            browser_auth_url("browser-signin"),
             use_container_width=True,
         )
 
@@ -179,7 +189,7 @@ else:
 
         st.link_button(
             "로그아웃",
-            "http://localhost:8000/api/v1/auth/browser-signout",
+            browser_auth_url("browser-signout"),
             use_container_width=True,
         )
 

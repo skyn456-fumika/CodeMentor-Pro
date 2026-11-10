@@ -15,6 +15,11 @@ API_BASE_URL = os.getenv(
     "http://127.0.0.1:8000",
 )
 
+STREAMLIT_APP_URL = os.getenv(
+    "STREAMLIT_APP_URL",
+    "http://localhost:8501",
+).rstrip("/")
+
 # requests.get()으로 백엔드를 호출하고, 
 # HTTP 오류가 발생하면 raise_for_status()로 처리
 # 요청에 timeout을 지정해서 서버가 응답하지 않을 때 무한정 대기하지 않도록 함
@@ -188,7 +193,7 @@ def restore_browser_login(refresh_token: str) -> dict:
     response = requests.post(
         f"{API_BASE_URL}/api/v1/auth/browser-restore",
         headers={
-            "Origin": "http://localhost:8501",
+            "Origin": STREAMLIT_APP_URL,
         },
         cookies={
             "codementor_refresh": refresh_token,
@@ -203,7 +208,7 @@ def revoke_browser_login(refresh_token: str) -> None:
     response = requests.post(
         f"{API_BASE_URL}/api/v1/auth/browser-logout",
         headers={
-            "Origin": "http://localhost:8501",
+            "Origin": STREAMLIT_APP_URL,
         },
         cookies={
             "codementor_refresh": refresh_token,
